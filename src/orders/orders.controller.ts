@@ -1,13 +1,13 @@
-import { Controller, NotImplementedException } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, OrderPaginationDto } from './dto';
+import { CreateOrderDto, OrderPaginationDto, ChangeStatusDto } from './dto';
 
 @Controller()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @MessagePattern('createOrder')  
+  @MessagePattern('createOrder')
   create(@Payload() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(createOrderDto);
   }
@@ -23,8 +23,7 @@ export class OrdersController {
   }
 
   @MessagePattern('changeOrderStatus')
-  changeOrderStatus() {
-    throw new NotImplementedException();
+  changeOrderStatus(@Payload() changeStatusDto: ChangeStatusDto) {
+    return this.ordersService.changeStatus(changeStatusDto);
   }
-
 }
