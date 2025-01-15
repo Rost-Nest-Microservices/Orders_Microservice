@@ -6,7 +6,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaClient } from '@prisma/client';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { ChangeStatusDto, OrderPaginationDto } from './dto';
@@ -114,7 +113,22 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       where: {
         id,
       },
+      include: {
+        OrderItem: {
+          select: {
+            price: true,
+            quantity: true,
+            productId: true,
+          },
+        },
+      },
     });
+
+    const productIds = order.OrderItem.map((orderItem) => orderItem.productId);
+
+    const products = await firstValueFrom(
+      this.productsClient.send({ cmd: 'validate_products' }, productIds),
+    );
 
     if (!order) {
       throw new RpcException({
@@ -122,11 +136,14 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
         status: HttpStatus.NOT_FOUND,
       });
     }
-    return order;
-  }
-
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
+    return {
+      ...order,
+      OrderItem: order.OrderItem.map((orderItem) => ({
+        ...orderItem,
+        name: products.find((product) => product.id === orderItem.productId)
+          .name,
+      })),
+    };
   }
 
   async changeStatus(changeStatusDto: ChangeStatusDto) {
