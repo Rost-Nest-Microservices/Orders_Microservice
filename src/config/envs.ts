@@ -1,23 +1,33 @@
+
 import 'dotenv/config';
+
 import * as joi from 'joi';
 
-const envsSchema = joi
-  .object({
-    PORT: joi.number().required(),
-    NATS_SERVERS: joi.array().items(joi.string()).required()
-  })
-  .unknown(true);
+interface EnvVars {
+  PORT: number;
+  NATS_SERVERS: string[];
+}
 
-const { error, value: envVars } = envsSchema.validate({
+const envsSchema = joi.object({
+  PORT: joi.number().required(),
+  NATS_SERVERS: joi.array().items( joi.string() ).required(),
+})
+.unknown(true);
+
+const { error, value } = envsSchema.validate({ 
   ...process.env,
   NATS_SERVERS: process.env.NATS_SERVERS?.split(',')
 });
 
-if (error) {
-    throw new Error(`Config validation error ${error.message}`);
+
+if ( error ) {
+  throw new Error(`Config validation error: ${ error.message }`);
 }
 
+const envVars:EnvVars = value;
+
+
 export const envs = {
-  port: envVars.PORT as number,
-  natsServers: envVars.NATS_SERVER
+  port: envVars.PORT,
+  natsServers: envVars.NATS_SERVERS,
 };
