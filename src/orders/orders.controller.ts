@@ -1,7 +1,12 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, OrderPaginationDto, ChangeStatusDto } from './dto';
+import {
+  CreateOrderDto,
+  OrderPaginationDto,
+  ChangeStatusDto,
+  PaidOrderDto,
+} from './dto';
 
 @Controller()
 export class OrdersController {
@@ -9,15 +14,14 @@ export class OrdersController {
 
   @MessagePattern('createOrder')
   async create(@Payload() createOrderDto: CreateOrderDto) {
-    
-    const order = await this.ordersService.create(createOrderDto);    
-    
+    const order = await this.ordersService.create(createOrderDto);
+
     const paymentSession = await this.ordersService.createPaymentSession(order);
 
     return {
       order,
-      paymentSession
-    }
+      paymentSession,
+    };
   }
 
   @MessagePattern('findAllOrders')
@@ -36,8 +40,7 @@ export class OrdersController {
   }
 
   @EventPattern('payment.succeeded')
-  paidOrder(@Payload() paidOrderDto: any) {
-    console.log({ paidOrderDto });
-    return paidOrderDto;
+  paidOrder(@Payload() paidOrderDto: PaidOrderDto) {
+    this.ordersService.paidOrder(paidOrderDto);
   }
 }
